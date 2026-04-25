@@ -1,0 +1,50 @@
+services:
+  piwigo:
+    image: linuxserver/piwigo:latest
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Brussels
+    ports:
+      - "80:80"
+    volumes:
+      - piwigo_config:/config
+      # Live-edit the plugin without rebuilding:
+      - ./plugins/MagicLinkLogin:/config/www/plugins/MagicLinkLogin
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: mariadb:10.11
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: piwigo
+      MYSQL_USER: piwigo
+      MYSQL_PASSWORD: piwigo
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      retries: 10
+    restart: unless-stopped
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"   # Web UI  →  http://localhost:8025
+      - "1025:1025"   # SMTP    →  configure Piwigo to use mailpit:1025
+    restart: unless-stopped
+
+  selenium:
+    image: selenium/standalone-chromium:latest
+    ports:
+      - "4444:4444"
+    shm_size: 2g      # Prevents Chrome from crashing inside Docker
+    restart: unless-stopped
+
+volumes:
+  piwigo_config:
+  db_data:

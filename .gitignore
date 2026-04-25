@@ -1,0 +1,19 @@
+# Composer
+vendor/
+composer.lock
+
+# Test output
+tests/_output/
+tests/_support/_generated/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Docker data (never commit DB volumes)
+docker-compose.override.yml

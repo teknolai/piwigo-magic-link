@@ -1,0 +1,39 @@
+namespace: Tests\E2E
+support_namespace: Support
+
+paths:
+  tests: ../../tests/e2e
+  output: ../../tests/_output
+  data: ../../tests/_data
+  support: ../../tests/_support
+  envs: ../../tests/_envs
+
+settings:
+  shuffle: false
+  lint: true
+
+extensions:
+  enabled:
+    - Codeception\Extension\RunFailed
+
+suites:
+  e2e:
+    actor: AcceptanceTester
+    modules:
+      enabled:
+        - WebDriver:
+            url: http://piwigo          # piwigo service hostname inside Docker
+            browser: chrome
+            host: selenium              # selenium service hostname inside Docker
+            port: 4444
+            window_size: 1280x900
+            capabilities:
+              "goog:chromeOptions":
+                args:
+                  - "--headless"
+                  - "--disable-gpu"
+                  - "--no-sandbox"
+        - REST:
+            url: http://mailpit:8025    # Mailpit API inside Docker
+            depends: PhpBrowser
+        - Asserts
