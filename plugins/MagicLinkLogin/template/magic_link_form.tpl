@@ -23,6 +23,7 @@
       <button
         type="submit"
         id="mll-submit"
+        data-label="{'Send login link'|translate}"
         style="padding: 0.5em 1.2em; background: #0070f3; color: #fff; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;"
       >
         {'Send login link'|translate}
@@ -75,7 +76,7 @@
 
   function showError(msg) {
     btn.disabled = false;
-    btn.textContent = '{$smarty.const.l10n["Send login link"]|default:"Send login link"}';
+    btn.textContent = btn.getAttribute('data-label') || 'Send login link';
     errBox.textContent = msg;
     errBox.style.display = 'block';
   }

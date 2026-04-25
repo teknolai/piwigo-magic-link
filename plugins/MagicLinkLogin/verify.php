@@ -12,18 +12,33 @@
  *   6. Redirect to the gallery
  */
 
-define('PHPWG_ROOT_PATH', '../../');
+// Locate Piwigo's root using DOCUMENT_ROOT set by nginx.
+// We cannot use __DIR__ or a relative path here because the plugins directory
+// is a symlink in the linuxserver/piwigo Docker image: PHP resolves __DIR__
+// to the real /config/www/... path, which is in a different tree from Piwigo's
+// actual root at the document root. DOCUMENT_ROOT gives the correct unresolved path.
+define('PHPWG_ROOT_PATH', rtrim($_SERVER['DOCUMENT_ROOT'] ?? '', '/') . '/');
 require_once PHPWG_ROOT_PATH . 'include/common.inc.php';
+require_once PHPWG_ROOT_PATH . 'include/functions_mail.inc.php';
 require_once PHPWG_PLUGINS_PATH . 'MagicLinkLogin/include/functions.php';
 
+// BUG-07: Guard in case the plugin is deactivated but this endpoint is hit directly
+if (!defined('MAGIC_LINK_TOKENS_TABLE')) {
+    global $prefixeTable;
+    define('MAGIC_LINK_TOKENS_TABLE', $prefixeTable . 'magic_link_tokens');
+}
+
 // ---------------------------------------------------------------------------
-// Helper: render a simple, safe error page and stop execution
+// Helper: render a simple, safe error page and stop execution.
+// BUG-17: Removed dead `global $template` — we render raw HTML here, no
+//         Piwigo template engine involved.
+// BUG-02: Uses mll_gallery_url() instead of get_absolute_root_url() —
+//         the latter reads cookie_path() which uses SCRIPT_NAME and returns
+//         the plugin endpoint path, not the gallery root.
 // ---------------------------------------------------------------------------
 function mll_error_page(string $heading, string $body): never
 {
-    global $template;
-
-    $login_url = get_absolute_root_url() . 'identification.php';
+    $login_url = mll_gallery_url() . 'identification.php';
 
     // Use a minimal inline template rather than Piwigo's full page so that
     // this page never crashes even if the theme is broken.
@@ -126,15 +141,21 @@ if ($user_id === null) {
         );
     }
 
-    // Fetch the newly created user's ID
-    $new_user = find_user_by_username_or_email($email);
-    if (!$new_user) {
+    // BUG-12: Query by mail_address directly rather than find_user_by_username_or_email()
+    // which could match a username that happens to equal another user's email.
+    $new_user_row = pwg_db_fetch_assoc(pwg_query(sprintf(
+        "SELECT id FROM %s WHERE mail_address = '%s' LIMIT 1",
+        USERS_TABLE,
+        pwg_db_real_escape_string($email)
+    )));
+
+    if (!$new_user_row) {
         mll_error_page(
             'Could not create account',
             'There was a problem creating your account. Please try again or contact the gallery administrator.'
         );
     }
-    $user_id = (int) $new_user['id'];
+    $user_id = (int) $new_user_row['id'];
 }
 
 // ---------------------------------------------------------------------------
@@ -143,13 +164,17 @@ if ($user_id === null) {
 log_user($user_id, false /* remember_me = false — magic link is single-use */);
 
 // ---------------------------------------------------------------------------
-// 6. Redirect to the gallery (or a pre-stored internal redirect)
+// 6. Redirect to the gallery (or a pre-stored internal redirect).
+//    BUG-02: Use mll_gallery_url() instead of get_absolute_root_url() —
+//    the latter reads cookie_path() which is computed from SCRIPT_NAME and
+//    returns the plugin endpoint path, not the gallery root.
 // ---------------------------------------------------------------------------
-$redirect = get_absolute_root_url();
+$gallery_root = mll_gallery_url();
+$redirect     = $gallery_root;
 
 // If the user was trying to visit a specific page before hitting the login
 // form, Piwigo stores it in the session — honour it if it's internal.
-if (!empty($_SESSION['redirect_to']) && mll_is_internal_url($_SESSION['redirect_to'], get_absolute_root_url())) {
+if (!empty($_SESSION['redirect_to']) && mll_is_internal_url($_SESSION['redirect_to'], $gallery_root)) {
     $redirect = $_SESSION['redirect_to'];
     unset($_SESSION['redirect_to']);
 }

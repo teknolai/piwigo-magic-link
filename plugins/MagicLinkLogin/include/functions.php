@@ -129,3 +129,41 @@ function mll_is_rate_limited(?int $seconds_since_last, int $min_gap_seconds = 60
     }
     return $seconds_since_last < $min_gap_seconds;
 }
+
+// ---------------------------------------------------------------------------
+// Gallery URL (safe for use in standalone endpoint files)
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns the absolute URL of the Piwigo gallery root, with trailing slash.
+ *
+ * We cannot use Piwigo's get_absolute_root_url() in standalone plugin endpoint
+ * files (magic_link_handler.php, verify.php) because cookie_path() derives the
+ * URL path from $_SERVER['SCRIPT_NAME'], which points to the plugin endpoint
+ * rather than the gallery root, producing a wrong URL like
+ * http://localhost/plugins/MagicLinkLogin/ instead of http://localhost/.
+ *
+ * This function computes the gallery root by navigating up from SCRIPT_NAME:
+ * the endpoints are always at {gallery_root}/plugins/MagicLinkLogin/{file}.php
+ * so three dirname() calls reliably reach the gallery root regardless of
+ * whether it is installed at the server root or in a subdirectory.
+ */
+function mll_gallery_url(): string
+{
+    $scheme = (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off')
+        ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+
+    // SCRIPT_NAME is the URL path (not filesystem path), e.g.
+    // /plugins/MagicLinkLogin/magic_link_handler.php
+    // Three dirname() calls: strip filename → strip MagicLinkLogin → strip plugins
+    $script = $_SERVER['SCRIPT_NAME'] ?? '/plugins/MagicLinkLogin/handler.php';
+    $gallery_path = dirname(dirname(dirname($script)));
+
+    // dirname('/plugins') returns '/' on Linux but '.' in some edge cases
+    if ($gallery_path === '.') {
+        $gallery_path = '';
+    }
+
+    return $scheme . '://' . $host . rtrim($gallery_path, '/') . '/';
+}

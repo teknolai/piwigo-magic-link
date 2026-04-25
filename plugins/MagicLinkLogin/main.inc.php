@@ -4,7 +4,7 @@
  * Version: 1.0.0
  * Description: Passwordless login via one-time email magic links. Works for both existing and new users.
  * Plugin URI: https://github.com/yourname/piwigo-magic-link
- * Author: Erik Korme
+ * Author: teknolai
  * Author URI: https://silverfin.com
  * Has Settings: false
  */

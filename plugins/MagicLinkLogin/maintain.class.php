@@ -8,11 +8,11 @@
 
 if (!defined('PHPWG_ROOT_PATH')) die('Hacking attempt!');
 
-class MagicLinkLoginMaintain extends PluginMaintain
+class MagicLinkLogin_maintain extends PluginMaintain
 {
-    private string $table;
+    private $table;
 
-    public function __construct(string $id)
+    public function __construct($id)
     {
         parent::__construct($id);
         global $prefixeTable;
@@ -22,7 +22,7 @@ class MagicLinkLoginMaintain extends PluginMaintain
     // -----------------------------------------------------------------------
     // Called once when the plugin is first installed
     // -----------------------------------------------------------------------
-    public function install(string $plugin_version, array &$errors = []): void
+    public function install($plugin_version, &$errors = [])
     {
         pwg_query("
             CREATE TABLE IF NOT EXISTS `{$this->table}` (
@@ -44,7 +44,7 @@ class MagicLinkLoginMaintain extends PluginMaintain
     // -----------------------------------------------------------------------
     // Called when the plugin is activated (also called after install)
     // -----------------------------------------------------------------------
-    public function activate(string $plugin_version, array &$errors = []): void
+    public function activate($plugin_version, &$errors = [])
     {
         // Ensure the table exists (safe to call on re-activation)
         $this->install($plugin_version, $errors);
@@ -53,7 +53,7 @@ class MagicLinkLoginMaintain extends PluginMaintain
     // -----------------------------------------------------------------------
     // Called when the plugin is deactivated — leave data intact
     // -----------------------------------------------------------------------
-    public function deactivate(): void
+    public function deactivate()
     {
         // Nothing to do — we keep the token table so tokens survive a temp disable
     }
@@ -61,7 +61,7 @@ class MagicLinkLoginMaintain extends PluginMaintain
     // -----------------------------------------------------------------------
     // Called when the plugin version changes — apply schema migrations here
     // -----------------------------------------------------------------------
-    public function update(string $old_version, string $new_version, array &$errors = []): void
+    public function update($old_version, $new_version, &$errors = [])
     {
         // No migrations needed for 1.0.0
     }
@@ -69,7 +69,7 @@ class MagicLinkLoginMaintain extends PluginMaintain
     // -----------------------------------------------------------------------
     // Called when the plugin is fully uninstalled — clean up everything
     // -----------------------------------------------------------------------
-    public function uninstall(): void
+    public function uninstall()
     {
         pwg_query("DROP TABLE IF EXISTS `{$this->table}`");
     }
