@@ -18,6 +18,16 @@
 // to the real /config/www/... path, which is in a different tree from Piwigo's
 // actual root at the document root. DOCUMENT_ROOT gives the correct unresolved path.
 define('PHPWG_ROOT_PATH', rtrim($_SERVER['DOCUMENT_ROOT'] ?? '', '/') . '/');
+
+// Fix session cookie path: Piwigo's functions_session.inc.php calls
+// session_set_cookie_params(0, cookie_path()) BEFORE session_start(). cookie_path()
+// derives the path from $_SERVER['SCRIPT_NAME'], which here is
+// /plugins/MagicLinkLogin/verify.php — so the session cookie would be scoped to
+// /plugins/MagicLinkLogin/ and silently dropped when the browser follows the
+// post-login redirect to /. Override SCRIPT_NAME so cookie_path() returns /,
+// meaning the session cookie is valid gallery-wide.
+$_SERVER['SCRIPT_NAME'] = '/index.php';
+
 require_once PHPWG_ROOT_PATH . 'include/common.inc.php';
 require_once PHPWG_ROOT_PATH . 'include/functions_mail.inc.php';
 require_once PHPWG_PLUGINS_PATH . 'MagicLinkLogin/include/functions.php';

@@ -143,16 +143,17 @@ single_insert(MAGIC_LINK_TOKENS_TABLE, [
 $gallery_url = mll_gallery_url();
 $verify_url  = $gallery_url . 'plugins/MagicLinkLogin/verify.php?token=' . rawurlencode($raw_token);
 
+// mail_title intentionally omitted — Piwigo defaults it to $conf['gallery_title']
+// (e.g. "Kormes galleri") which is the big bold header in the email, matching the
+// look of other Piwigo system emails. mail_subtitle defaults to $args['subject'].
 pwg_mail(
     $email,
     [
-        'subject'        => l10n('Your magic login link'),
-        'content_format' => 'text/html',
-        'mail_title'     => l10n('Sign in to') . ' ' . $gallery_url,
+        'subject' => l10n('Your magic login link'),
     ],
     [
         // BUG-01: pwg_mail appends '/' . $content_type to dirname, so the
-        // template must live at template/text/html/magic_link_email.tpl
+        // templates must live at template/text/html/ and template/text/plain/.
         'filename' => 'magic_link_email',
         'dirname'  => MLL_PATH . 'template',
         'assign'   => [
