@@ -1,8 +1,9 @@
 {* MagicLinkLogin — Email form block.
  *
  * JavaScript moves this block to the top of the login form (above the
- * password form) and hides the password form, making magic link the primary
- * login method. A "Sign in with password" toggle reveals the password form.
+ * password form) and shows both forms simultaneously. There is no toggle;
+ * the magic-link form is the primary method and the password form remains
+ * fully visible below a divider.
  *
  * Supports both Piwigo themes:
  *   • standard_pages (Piwigo 16+): reuses column-flex / input-container /
@@ -18,6 +19,10 @@
    Only applied when standard_pages is NOT active (JS adds .mll-sp to
    #mll-block when it detects the standard_pages theme). */
 
+#mll-block:not(.mll-sp) {
+    max-width: 480px;
+    margin-bottom: 1em;
+}
 #mll-block:not(.mll-sp) .column-flex {
     display: flex;
     flex-direction: column;
@@ -25,6 +30,7 @@
     margin-bottom: .75em;
 }
 #mll-block:not(.mll-sp) label {
+    display: block;
     margin-bottom: .3em;
     font-weight: bold;
     font-size: .9em;
@@ -36,8 +42,9 @@
 }
 #mll-block:not(.mll-sp) .input-container {
     border: 1px solid #ccc;
-    border-radius: 3px;
+    border-radius: 2px;
     padding: 4px 8px;
+    background: #fff;
 }
 #mll-block:not(.mll-sp) .input-container input {
     flex: 1;
@@ -56,12 +63,12 @@
 #mll-block:not(.mll-sp) .btn.btn-main {
     display: block;
     width: 100%;
-    padding: .6em 1em;
-    margin-top: .5em;
+    padding: .5em 1em;
+    margin-top: .25em;
     background: #ff7700;
     color: #fff;
     border: none;
-    border-radius: 3px;
+    border-radius: 2px;
     cursor: pointer;
     font-size: 1em;
     text-align: center;
@@ -73,7 +80,7 @@
 #mll-block:not(.mll-sp) #mll-sent {
     padding: .75em 1em;
     border: 1px solid #6c6;
-    border-radius: 3px;
+    border-radius: 2px;
     background: #f0fff0;
 }
 #mll-block:not(.mll-sp) .error-message {
@@ -81,6 +88,7 @@
     font-size: .85em;
     margin-top: .25em;
 }
+
 /* ── Shared rules (both themes) ────────────────────────────────────────── */
 
 #mll-sent {
@@ -105,18 +113,6 @@
     flex: 1;
     height: 1px;
     background: currentColor;
-}
-#mll-password-link {
-    text-align: center;
-    margin: 0;
-    font-size: .88em;
-}
-/* Hide the password form without a flash — we set display:none via JS after
-   moving our block into place, but this transition avoids a jump if JS is
-   slow. We use opacity so the layout doesn't shift before JS runs. */
-.mll-hiding {
-    visibility: hidden;
-    position: absolute;
 }
 
 </style>
@@ -165,14 +161,11 @@
                 </button>
             </div>
         </form>
+    </div>
 
-        <div class="mll-divider" aria-hidden="true">
-            <span>{'or'|translate}</span>
-        </div>
-
-        <p id="mll-password-link">
-            <a href="#" id="mll-use-password">{'Sign in with password'|translate}</a>
-        </p>
+    {* Divider between the magic-link form and the password form below *}
+    <div class="mll-divider" aria-hidden="true">
+        <span>{'or sign in with password'|translate}</span>
     </div>
 
 </div>
@@ -216,54 +209,11 @@
     pwdForm.parentNode.insertBefore(mll, pwdForm);
   }
 
-  // ── 3. Show our block, hide password form ─────────────────────────────
+  // ── 3. Show our block; password form stays fully visible below ────────
   mll.style.display = 'block';
   mll.removeAttribute('aria-hidden');
 
-  // Hide password form cleanly (no layout jump)
-  pwdForm.classList.add('mll-hiding');
-  pwdForm.setAttribute('aria-hidden', 'true');
-
-  // ── 4. "Sign in with password" toggle ────────────────────────────────
-  var pwdLink   = document.getElementById('mll-use-password');
-  var backLink  = null; // "Use magic link instead" — created when needed
-
-  if (pwdLink) {
-    pwdLink.addEventListener('click', function (e) {
-      e.preventDefault();
-      mll.style.display = 'none';
-      mll.setAttribute('aria-hidden', 'true');
-
-      pwdForm.classList.remove('mll-hiding');
-      pwdForm.removeAttribute('aria-hidden');
-
-      // Focus the username field
-      var uname = pwdForm.querySelector('[name="username"]');
-      if (uname) uname.focus();
-
-      // Add "Use magic link instead" below the password form (once)
-      if (!backLink) {
-        backLink = document.createElement('p');
-        backLink.style.cssText = 'text-align:center; margin-top:1em; font-size:.9em;';
-        backLink.innerHTML = '<a href="#" id="mll-back-link">{'Use magic link instead'|translate}</a>';
-        pwdForm.parentNode.insertBefore(backLink, pwdForm.nextSibling);
-
-        document.getElementById('mll-back-link').addEventListener('click', function (e2) {
-          e2.preventDefault();
-          pwdForm.classList.add('mll-hiding');
-          pwdForm.setAttribute('aria-hidden', 'true');
-          backLink.style.display = 'none';
-          mll.style.display = 'block';
-          mll.removeAttribute('aria-hidden');
-          document.getElementById('mll-email').focus();
-        });
-      } else {
-        backLink.style.display = '';
-      }
-    });
-  }
-
-  // ── 5. AJAX submission ────────────────────────────────────────────────
+  // ── 4. AJAX submission ────────────────────────────────────────────────
   form.addEventListener('submit', function (e) {
     e.preventDefault();
 

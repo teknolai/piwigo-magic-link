@@ -37,13 +37,13 @@ header('Content-Type: application/json; charset=utf-8');
 // ---------------------------------------------------------------------------
 // Generic success response — returned in ALL cases to prevent enumeration
 // ---------------------------------------------------------------------------
-function mll_ok(): never
+function mll_ok(): void
 {
     echo json_encode(['status' => 'ok']);
     exit;
 }
 
-function mll_error(string $message, int $code = 400): never
+function mll_error(string $message, int $code = 400): void
 {
     http_response_code($code);
     echo json_encode(['status' => 'error', 'message' => $message]);

@@ -29,7 +29,7 @@ define('PHPWG_ROOT_PATH', rtrim($_SERVER['DOCUMENT_ROOT'] ?? '', '/') . '/');
 $_SERVER['SCRIPT_NAME'] = '/index.php';
 
 require_once PHPWG_ROOT_PATH . 'include/common.inc.php';
-require_once PHPWG_ROOT_PATH . 'include/functions_mail.inc.php';
+// functions_mail.inc.php not needed here (verify.php never sends email)
 require_once PHPWG_PLUGINS_PATH . 'MagicLinkLogin/include/functions.php';
 
 // BUG-07: Guard in case the plugin is deactivated but this endpoint is hit directly
@@ -46,7 +46,7 @@ if (!defined('MAGIC_LINK_TOKENS_TABLE')) {
 //         the latter reads cookie_path() which uses SCRIPT_NAME and returns
 //         the plugin endpoint path, not the gallery root.
 // ---------------------------------------------------------------------------
-function mll_error_page(string $heading, string $body): never
+function mll_error_page(string $heading, string $body): void
 {
     $login_url = mll_gallery_url() . 'identification.php';
 
@@ -102,7 +102,33 @@ if (!$row) {
 }
 
 // ---------------------------------------------------------------------------
-// 3. Mark the token as used IMMEDIATELY — before doing anything else.
+// 3. UA fingerprint check (Passless-style browser binding).
+//    Compares the User-Agent of the current request to the one stored when
+//    the token was issued. Mismatch means the link was opened in a different
+//    browser or device than the one that requested it.
+//
+//    We check BEFORE marking the token used so the user can retry from the
+//    correct browser (or request a new link) without burning their token.
+//
+//    Disabled when MLL_VERIFY_UA is false (set in main.inc.php or config).
+// ---------------------------------------------------------------------------
+if (
+    defined('MLL_VERIFY_UA') && MLL_VERIFY_UA
+    && !empty($row['ua_hash'])
+) {
+    $current_ua_hash = hash('sha256', $_SERVER['HTTP_USER_AGENT'] ?? '');
+    if (!hash_equals($row['ua_hash'], $current_ua_hash)) {
+        mll_error_page(
+            'Browser mismatch',
+            'This link was opened in a different browser or device than the one '
+            . 'used to request it. Please open the link in the same browser, '
+            . 'or request a new magic link from this browser.'
+        );
+    }
+}
+
+// ---------------------------------------------------------------------------
+// 4. Mark the token as used IMMEDIATELY — before doing anything else.
 //    This prevents replay attacks even under concurrent requests.
 // ---------------------------------------------------------------------------
 single_update(
@@ -112,7 +138,7 @@ single_update(
 );
 
 // ---------------------------------------------------------------------------
-// 4. Auto-register if this is a new user (user_id is NULL in the token row)
+// 5. Auto-register if this is a new user (user_id is NULL in the token row)
 // ---------------------------------------------------------------------------
 $user_id = $row['user_id'] ? (int) $row['user_id'] : null;
 $email   = $row['email'];
@@ -121,9 +147,15 @@ if ($user_id === null) {
     // Derive a unique username from the email address
     $base_username = mll_derive_username($email);
 
-    // Fetch existing usernames to avoid collisions
+    // BUG-09: Only load usernames that could collide with our candidate
+    // (exact match or suffixed match), not the entire users table.
     $existing = query2array(
-        "SELECT username FROM " . USERS_TABLE,
+        sprintf(
+            "SELECT username FROM %s WHERE username = '%s' OR username LIKE '%s-%%'",
+            USERS_TABLE,
+            pwg_db_real_escape_string($base_username),
+            pwg_db_real_escape_string($base_username)
+        ),
         null,
         'username'
     );
@@ -134,7 +166,10 @@ if ($user_id === null) {
     $random_password = bin2hex(random_bytes(16));
 
     $errors = [];
-    register_user(
+    // BUG-03: Capture return value — register_user() returns the new user_id
+    // on success or false on failure. This avoids the race-condition of
+    // re-fetching the user by email immediately after insertion.
+    $new_user_id = register_user(
         $username,
         $random_password,
         $email,
@@ -143,7 +178,7 @@ if ($user_id === null) {
         false   // do not notify the new user (we just logged them in)
     );
 
-    if (!empty($errors)) {
+    if ($new_user_id === false || !empty($errors)) {
         // Registration failed — show a safe message without leaking details
         mll_error_page(
             'Could not create account',
@@ -151,30 +186,16 @@ if ($user_id === null) {
         );
     }
 
-    // BUG-12: Query by mail_address directly rather than find_user_by_username_or_email()
-    // which could match a username that happens to equal another user's email.
-    $new_user_row = pwg_db_fetch_assoc(pwg_query(sprintf(
-        "SELECT id FROM %s WHERE mail_address = '%s' LIMIT 1",
-        USERS_TABLE,
-        pwg_db_real_escape_string($email)
-    )));
-
-    if (!$new_user_row) {
-        mll_error_page(
-            'Could not create account',
-            'There was a problem creating your account. Please try again or contact the gallery administrator.'
-        );
-    }
-    $user_id = (int) $new_user_row['id'];
+    $user_id = (int) $new_user_id;
 }
 
 // ---------------------------------------------------------------------------
-// 5. Log the user in using Piwigo's own session management
+// 6. Log the user in using Piwigo's own session management
 // ---------------------------------------------------------------------------
 log_user($user_id, false /* remember_me = false — magic link is single-use */);
 
 // ---------------------------------------------------------------------------
-// 6. Redirect to the gallery (or a pre-stored internal redirect).
+// 7. Redirect to the gallery (or a pre-stored internal redirect).
 //    BUG-02: Use mll_gallery_url() instead of get_absolute_root_url() —
 //    the latter reads cookie_path() which is computed from SCRIPT_NAME and
 //    returns the plugin endpoint path, not the gallery root.
