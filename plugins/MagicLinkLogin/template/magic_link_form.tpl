@@ -21,7 +21,8 @@
 
 #mll-block:not(.mll-sp) {
     max-width: 480px;
-    margin-bottom: 1em;
+    margin: 0 auto 1em auto; /* centre within .content like the password fieldset */
+    text-align: left;        /* override the .content text-align:center inherited value */
 }
 #mll-block:not(.mll-sp) .column-flex {
     display: flex;
@@ -61,20 +62,26 @@
     font-size: 14px;
 }
 #mll-block:not(.mll-sp) .btn.btn-main {
+    /* Match the default theme's plain <input type="submit"> look.
+       ButtonFace / ButtonText are CSS system colours that resolve to the
+       OS-native button colours — same as what the browser renders for a
+       bare <input type="submit"> with no custom styling. */
+    -webkit-appearance: button;
+    appearance: button;
     display: block;
     width: 100%;
-    padding: .5em 1em;
-    margin-top: .25em;
-    background: #ff7700;
-    color: #fff;
-    border: none;
+    padding: 2px 6px;
+    margin-top: .4em;
+    background: ButtonFace;
+    color: ButtonText;
+    border: 2px outset ButtonBorder;
     border-radius: 2px;
-    cursor: pointer;
+    cursor: default;
     font-size: 1em;
     text-align: center;
 }
 #mll-block:not(.mll-sp) .btn.btn-main:disabled {
-    background: #aaa;
+    opacity: .5;
     cursor: not-allowed;
 }
 #mll-block:not(.mll-sp) #mll-sent {
@@ -87,6 +94,16 @@
     color: #c00;
     font-size: .85em;
     margin-top: .25em;
+}
+
+/* ── Dark-mode fix for standard_pages ──────────────────────────────────────
+   standard_pages/theme.css only applies "color: inherit" to
+   .dark .properties label and .dark .properties i — our block is not inside
+   .properties, so its label and @ icon keep the light default and become
+   invisible against the dark background. Mirror the same rule for our block. */
+.dark #mll-block label,
+.dark #mll-block .input-container i {
+    color: inherit;
 }
 
 /* ── Shared rules (both themes) ────────────────────────────────────────── */
