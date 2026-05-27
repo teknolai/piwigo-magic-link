@@ -158,7 +158,7 @@
                         type="email"
                         id="mll-email"
                         name="email"
-                        placeholder="{'your@email.com'|translate}"
+                        placeholder="{'Enter your email to get a login link'|translate}"
                         autocomplete="email"
                     >
                     {* No data-required: standard_pages JS validates ALL
@@ -177,9 +177,9 @@
                     type="submit"
                     id="mll-submit"
                     class="btn btn-main"
-                    data-label="{'Send magic link'|translate}"
+                    data-label="{'Send me a login link'|translate}"
                 >
-                    {'Send magic link'|translate}
+                    {'Send me a login link'|translate}
                 </button>
             </div>
         </form>
