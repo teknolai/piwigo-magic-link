@@ -51,6 +51,8 @@
     flex: 1;
     border: none;
     background: transparent;
+    color: #333; /* explicit dark text; prevents browser dark-mode inference
+                    from rendering white text on the transparent input */
     padding: .35em .25em;
     font-size: 1em;
     outline: none;
@@ -158,8 +160,11 @@
                         name="email"
                         placeholder="{'your@email.com'|translate}"
                         autocomplete="email"
-                        data-required="true"
                     >
+                    {* No data-required: standard_pages JS validates ALL
+                       [data-required] inputs across ALL forms on page submit,
+                       which would block the password form when email is empty.
+                       We validate ourselves in the JS submit handler below. *}
                 </div>
                 <p class="error-message" id="mll-error" role="alert">
                     <i class="gallery-icon-attention-circled" aria-hidden="true"></i>
@@ -233,6 +238,17 @@
   // ── 4. AJAX submission ────────────────────────────────────────────────
   form.addEventListener('submit', function (e) {
     e.preventDefault();
+
+    // Basic client-side guard: show error if email field is empty.
+    // (We can't use data-required because standard_pages JS validates
+    // ALL [data-required] inputs page-wide, including ours, when the
+    // password form is submitted.)
+    var emailInput = document.getElementById('mll-email');
+    if (!emailInput || !emailInput.value.trim()) {
+      errBox.style.display = 'block';
+      if (emailInput) emailInput.focus();
+      return;
+    }
 
     btn.disabled = true;
     btn.textContent = '…';
