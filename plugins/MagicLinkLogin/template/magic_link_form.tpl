@@ -1,8 +1,9 @@
 {* MagicLinkLogin — Email form block.
  *
  * JavaScript moves this block to the top of the login form (above the
- * password form) and hides the password form, making magic link the primary
- * login method. A "Sign in with password" toggle reveals the password form.
+ * password form) and shows both forms simultaneously. There is no toggle;
+ * the magic-link form is the primary method and the password form remains
+ * fully visible below a divider.
  *
  * Supports both Piwigo themes:
  *   • standard_pages (Piwigo 16+): reuses column-flex / input-container /
@@ -18,6 +19,11 @@
    Only applied when standard_pages is NOT active (JS adds .mll-sp to
    #mll-block when it detects the standard_pages theme). */
 
+#mll-block:not(.mll-sp) {
+    max-width: 480px;
+    margin: 0 auto 1em auto; /* centre within .content like the password fieldset */
+    text-align: left;        /* override the .content text-align:center inherited value */
+}
 #mll-block:not(.mll-sp) .column-flex {
     display: flex;
     flex-direction: column;
@@ -25,6 +31,7 @@
     margin-bottom: .75em;
 }
 #mll-block:not(.mll-sp) label {
+    display: block;
     margin-bottom: .3em;
     font-weight: bold;
     font-size: .9em;
@@ -36,13 +43,16 @@
 }
 #mll-block:not(.mll-sp) .input-container {
     border: 1px solid #ccc;
-    border-radius: 3px;
+    border-radius: 2px;
     padding: 4px 8px;
+    background: #fff;
 }
 #mll-block:not(.mll-sp) .input-container input {
     flex: 1;
     border: none;
     background: transparent;
+    color: #333; /* explicit dark text; prevents browser dark-mode inference
+                    from rendering white text on the transparent input */
     padding: .35em .25em;
     font-size: 1em;
     outline: none;
@@ -54,26 +64,32 @@
     font-size: 14px;
 }
 #mll-block:not(.mll-sp) .btn.btn-main {
+    /* Match the default theme's plain <input type="submit"> look.
+       ButtonFace / ButtonText are CSS system colours that resolve to the
+       OS-native button colours — same as what the browser renders for a
+       bare <input type="submit"> with no custom styling. */
+    -webkit-appearance: button;
+    appearance: button;
     display: block;
     width: 100%;
-    padding: .6em 1em;
-    margin-top: .5em;
-    background: #ff7700;
-    color: #fff;
-    border: none;
-    border-radius: 3px;
-    cursor: pointer;
+    padding: 2px 6px;
+    margin-top: .4em;
+    background: ButtonFace;
+    color: ButtonText;
+    border: 2px outset ButtonBorder;
+    border-radius: 2px;
+    cursor: default;
     font-size: 1em;
     text-align: center;
 }
 #mll-block:not(.mll-sp) .btn.btn-main:disabled {
-    background: #aaa;
+    opacity: .5;
     cursor: not-allowed;
 }
 #mll-block:not(.mll-sp) #mll-sent {
     padding: .75em 1em;
     border: 1px solid #6c6;
-    border-radius: 3px;
+    border-radius: 2px;
     background: #f0fff0;
 }
 #mll-block:not(.mll-sp) .error-message {
@@ -81,6 +97,17 @@
     font-size: .85em;
     margin-top: .25em;
 }
+
+/* ── Dark-mode fix for standard_pages ──────────────────────────────────────
+   standard_pages/theme.css only applies "color: inherit" to
+   .dark .properties label and .dark .properties i — our block is not inside
+   .properties, so its label and @ icon keep the light default and become
+   invisible against the dark background. Mirror the same rule for our block. */
+.dark #mll-block label,
+.dark #mll-block .input-container i {
+    color: inherit;
+}
+
 /* ── Shared rules (both themes) ────────────────────────────────────────── */
 
 #mll-sent {
@@ -105,18 +132,6 @@
     flex: 1;
     height: 1px;
     background: currentColor;
-}
-#mll-password-link {
-    text-align: center;
-    margin: 0;
-    font-size: .88em;
-}
-/* Hide the password form without a flash — we set display:none via JS after
-   moving our block into place, but this transition avoids a jump if JS is
-   slow. We use opacity so the layout doesn't shift before JS runs. */
-.mll-hiding {
-    visibility: hidden;
-    position: absolute;
 }
 
 </style>
@@ -143,10 +158,13 @@
                         type="email"
                         id="mll-email"
                         name="email"
-                        placeholder="{'your@email.com'|translate}"
+                        placeholder="{'Enter your email to get a login link'|translate}"
                         autocomplete="email"
-                        data-required="true"
                     >
+                    {* No data-required: standard_pages JS validates ALL
+                       [data-required] inputs across ALL forms on page submit,
+                       which would block the password form when email is empty.
+                       We validate ourselves in the JS submit handler below. *}
                 </div>
                 <p class="error-message" id="mll-error" role="alert">
                     <i class="gallery-icon-attention-circled" aria-hidden="true"></i>
@@ -159,20 +177,17 @@
                     type="submit"
                     id="mll-submit"
                     class="btn btn-main"
-                    data-label="{'Send magic link'|translate}"
+                    data-label="{'Send me a login link'|translate}"
                 >
-                    {'Send magic link'|translate}
+                    {'Send me a login link'|translate}
                 </button>
             </div>
         </form>
+    </div>
 
-        <div class="mll-divider" aria-hidden="true">
-            <span>{'or'|translate}</span>
-        </div>
-
-        <p id="mll-password-link">
-            <a href="#" id="mll-use-password">{'Sign in with password'|translate}</a>
-        </p>
+    {* Divider between the magic-link form and the password form below *}
+    <div class="mll-divider" aria-hidden="true">
+        <span>{'or sign in with password'|translate}</span>
     </div>
 
 </div>
@@ -216,56 +231,24 @@
     pwdForm.parentNode.insertBefore(mll, pwdForm);
   }
 
-  // ── 3. Show our block, hide password form ─────────────────────────────
+  // ── 3. Show our block; password form stays fully visible below ────────
   mll.style.display = 'block';
   mll.removeAttribute('aria-hidden');
 
-  // Hide password form cleanly (no layout jump)
-  pwdForm.classList.add('mll-hiding');
-  pwdForm.setAttribute('aria-hidden', 'true');
-
-  // ── 4. "Sign in with password" toggle ────────────────────────────────
-  var pwdLink   = document.getElementById('mll-use-password');
-  var backLink  = null; // "Use magic link instead" — created when needed
-
-  if (pwdLink) {
-    pwdLink.addEventListener('click', function (e) {
-      e.preventDefault();
-      mll.style.display = 'none';
-      mll.setAttribute('aria-hidden', 'true');
-
-      pwdForm.classList.remove('mll-hiding');
-      pwdForm.removeAttribute('aria-hidden');
-
-      // Focus the username field
-      var uname = pwdForm.querySelector('[name="username"]');
-      if (uname) uname.focus();
-
-      // Add "Use magic link instead" below the password form (once)
-      if (!backLink) {
-        backLink = document.createElement('p');
-        backLink.style.cssText = 'text-align:center; margin-top:1em; font-size:.9em;';
-        backLink.innerHTML = '<a href="#" id="mll-back-link">{'Use magic link instead'|translate}</a>';
-        pwdForm.parentNode.insertBefore(backLink, pwdForm.nextSibling);
-
-        document.getElementById('mll-back-link').addEventListener('click', function (e2) {
-          e2.preventDefault();
-          pwdForm.classList.add('mll-hiding');
-          pwdForm.setAttribute('aria-hidden', 'true');
-          backLink.style.display = 'none';
-          mll.style.display = 'block';
-          mll.removeAttribute('aria-hidden');
-          document.getElementById('mll-email').focus();
-        });
-      } else {
-        backLink.style.display = '';
-      }
-    });
-  }
-
-  // ── 5. AJAX submission ────────────────────────────────────────────────
+  // ── 4. AJAX submission ────────────────────────────────────────────────
   form.addEventListener('submit', function (e) {
     e.preventDefault();
+
+    // Basic client-side guard: show error if email field is empty.
+    // (We can't use data-required because standard_pages JS validates
+    // ALL [data-required] inputs page-wide, including ours, when the
+    // password form is submitted.)
+    var emailInput = document.getElementById('mll-email');
+    if (!emailInput || !emailInput.value.trim()) {
+      errBox.style.display = 'block';
+      if (emailInput) emailInput.focus();
+      return;
+    }
 
     btn.disabled = true;
     btn.textContent = '…';

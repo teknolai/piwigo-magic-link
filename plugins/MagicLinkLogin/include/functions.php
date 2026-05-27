@@ -127,7 +127,7 @@ function mll_is_rate_limited(?int $seconds_since_last, int $min_gap_seconds = 60
     if ($seconds_since_last === null) {
         return false;
     }
-    return $seconds_since_last < $min_gap_seconds;
+    return $seconds_since_last <= $min_gap_seconds;
 }
 
 // ---------------------------------------------------------------------------
