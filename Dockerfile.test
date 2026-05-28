@@ -1,0 +1,14 @@
+# Lightweight PHP-CLI image for running the PHPUnit unit suite.
+#
+# The Piwigo runtime image (linuxserver/piwigo) ships a PHP build without the
+# `tokenizer` extension that PHPUnit requires, so the unit tests run in this
+# dedicated container instead. mbstring is the only PHPUnit-required extension
+# not already bundled in the official php:8.3-cli image.
+FROM php:8.3-cli
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libonig-dev \
+    && docker-php-ext-install mbstring \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app/plugins/MagicLinkLogin
