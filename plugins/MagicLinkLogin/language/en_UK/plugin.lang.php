@@ -6,7 +6,7 @@
  */
 
 $lang['Email address']                                         = 'Email address';
-$lang['Enter your email to get a login link']                  = 'Enter your email to get a login link';
+$lang['Enter your email']                                      = 'Enter your email';
 $lang['Send me a login link']                                  = 'Send me a login link';
 $lang['Something went wrong. Please try again.']               = 'Something went wrong. Please try again.';
 $lang['or sign in with password']                              = 'or sign in with password';

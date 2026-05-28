@@ -1,10 +1,12 @@
 # Composer
 vendor/
 composer.lock
+composer.phar
 
 # Test output
 tests/_output/
 tests/_support/_generated/
+.phpunit.result.cache
 
 # OS
 .DS_Store
