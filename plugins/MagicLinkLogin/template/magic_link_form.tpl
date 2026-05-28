@@ -158,7 +158,7 @@
                         type="email"
                         id="mll-email"
                         name="email"
-                        placeholder="{'Enter your email to get a login link'|translate}"
+                        placeholder="{'Enter your email'|translate}"
                         autocomplete="email"
                     >
                     {* No data-required: standard_pages JS validates ALL
@@ -238,6 +238,13 @@
   // ── 4. AJAX submission ────────────────────────────────────────────────
   form.addEventListener('submit', function (e) {
     e.preventDefault();
+    // standard_pages.js binds a submit handler to EVERY form present at
+    // document-ready that validates ALL [data-required] inputs page-wide.
+    // Our form exists by then, so that handler is bound to it too — pressing
+    // Enter here would fire it and flag the password form's empty (required)
+    // username field. Our listener is registered first (at parse time), so
+    // stopping immediate propagation prevents theirs from running.
+    e.stopImmediatePropagation();
 
     // Basic client-side guard: show error if email field is empty.
     // (We can't use data-required because standard_pages JS validates
