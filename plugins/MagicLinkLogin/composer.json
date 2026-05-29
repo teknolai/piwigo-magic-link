@@ -1,5 +1,5 @@
 {
-    "name": "yourname/piwigo-magic-link-login",
+    "name": "teknolai/piwigo-magic-link-login",
     "description": "Passwordless magic-link login plugin for Piwigo",
     "type": "piwigo-plugin",
     "license": "GPL-2.0-or-later",

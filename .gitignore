@@ -19,3 +19,6 @@ Thumbs.db
 
 # Docker data (never commit DB volumes)
 docker-compose.override.yml
+
+# Build output (make package)
+dist/

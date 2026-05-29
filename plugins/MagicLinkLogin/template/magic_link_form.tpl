@@ -205,10 +205,10 @@
 
   if (!mll) return;
 
-  // ── 1. Detect theme & locate password form ────────────────────────────
-  // standard_pages wraps the login form in <section id="login-form">.
-  // The classic default theme uses <form name="login_form">.
-  var loginSection = document.querySelector('section#login-form');
+  // ── 1. Locate the password form (the one stable anchor in both themes)─
+  // Both the classic "default" theme and "standard_pages" render the login
+  // form as <form name="login_form">. That name is a long-standing Piwigo
+  // convention and is far more stable than the surrounding markup.
   var pwdForm = document.querySelector('form[name="login_form"]');
 
   if (!pwdForm) {
@@ -218,17 +218,18 @@
     return;
   }
 
-  // ── 2. Move block into position ───────────────────────────────────────
-  if (loginSection) {
-    // standard_pages: insert inside the inner wrapper <div>, after <h1>
-    var innerDiv = loginSection.querySelector('div') || loginSection;
-    var h1 = innerDiv.querySelector('h1');
-    var refNode = (h1 && h1.nextSibling) ? h1.nextSibling : innerDiv.querySelector('form');
-    innerDiv.insertBefore(mll, refNode);
-    mll.classList.add('mll-sp'); // signals: standard_pages CSS handles styling
-  } else {
-    // default theme: insert before the password form
-    pwdForm.parentNode.insertBefore(mll, pwdForm);
+  // ── 2. Insert our block directly above the password form ──────────────
+  // Anchoring on the form itself (rather than walking nested wrappers, the
+  // <h1>, or nextSibling) means theme markup reshuffles in future Piwigo
+  // versions are far less likely to misplace or drop the block. In both
+  // themes the form's parent is the login container, so this lands the
+  // block immediately above the password form in the same spot as before.
+  pwdForm.parentNode.insertBefore(mll, pwdForm);
+
+  // standard_pages styles inputs/buttons with its own classes; flag it so
+  // our CSS defers to the theme instead of applying default-theme fallbacks.
+  if (document.querySelector('section#login-form')) {
+    mll.classList.add('mll-sp');
   }
 
   // ── 3. Show our block; password form stays fully visible below ────────

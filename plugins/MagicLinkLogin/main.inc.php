@@ -3,7 +3,7 @@
  * Plugin Name: MagicLinkLogin
  * Version: 1.0.0
  * Description: Passwordless login via one-time email magic links. Works for both existing and new users.
- * Plugin URI: https://github.com/yourname/piwigo-magic-link
+ * Plugin URI: https://github.com/teknolai/piwigo-magic-link
  * Author: teknolai
  * Author URI: https://silverfin.com
  * Has Settings: false
