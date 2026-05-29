@@ -172,6 +172,14 @@ CREATE TABLE IF NOT EXISTS `{prefix}magic_link_tokens` (
 
 ## 9. Testing Strategy
 
+> **Status (implemented):** We ship **Level 1 unit tests only** as the automated
+> layer (run via `make test-unit` in a dedicated php-cli container — the Piwigo
+> image lacks the `tokenizer` extension PHPUnit needs). The Level 2 integration
+> and a later Codeception/Selenium E2E experiment were **intentionally dropped**:
+> they added a heavy, brittle toolchain (Selenium, WebDriver) for low return on a
+> solo project. Coverage now relies on unit tests for the security-critical pure
+> functions + the Level 3 manual smoke checklist + verified-in-production behaviour.
+
 Piwigo has no built-in test harness, so we layer three levels of testing:
 
 ### Level 1 — Unit tests (PHPUnit, no Piwigo dependency)

@@ -38,12 +38,16 @@ services:
       - "1025:1025"   # SMTP    →  configure Piwigo to use mailpit:1025
     restart: unless-stopped
 
-  selenium:
-    image: selenium/standalone-chromium:latest
-    ports:
-      - "4444:4444"
-    shm_size: 2g      # Prevents Chrome from crashing inside Docker
-    restart: unless-stopped
+  # On-demand container for the PHPUnit unit suite. Not started by
+  # `docker compose up` (test profile); invoked via `make test-unit`.
+  phpunit:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    volumes:
+      - .:/app
+    working_dir: /app/plugins/MagicLinkLogin
+    profiles: ["test"]
 
 volumes:
   piwigo_config:

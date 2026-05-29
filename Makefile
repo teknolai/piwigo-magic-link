@@ -1,9 +1,9 @@
-.PHONY: up down logs db restart clean test-unit test-e2e help
+.PHONY: up down logs db restart clean test-unit help
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-14s\033[0m %s\n", $$1, $$2}'
 
-up: ## Start all containers (Piwigo + DB + Mailpit + Selenium)
+up: ## Start all containers (Piwigo + DB + Mailpit)
 	docker compose up -d
 	@echo ""
 	@echo "  Piwigo:  http://localhost"
@@ -26,9 +26,5 @@ clean: ## Destroy everything including DB data — full fresh start
 	docker compose down -v
 	@echo "All containers and volumes removed."
 
-test-unit: ## Run PHPUnit unit tests (no Docker needed)
-	vendor/bin/phpunit tests/unit --testdox
-
-test-e2e: ## Run Codeception browser E2E tests (Docker must be running)
-	docker compose exec piwigo php /config/www/plugins/MagicLinkLogin/vendor/bin/codecept run e2e --html
-	@echo "Report: tests/_output/report.html"
+test-unit: ## Run PHPUnit unit tests (in dedicated php-cli container)
+	docker compose run --rm phpunit vendor/bin/phpunit --testdox
