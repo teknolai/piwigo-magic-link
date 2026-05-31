@@ -3,10 +3,10 @@
  * Plugin Name: MagicLinkLogin
  * Version: 1.0.0
  * Description: Passwordless login via one-time email magic links. Works for both existing and new users.
- * Plugin URI: https://github.com/yourname/piwigo-magic-link
+ * Plugin URI: https://github.com/teknolai/piwigo-magic-link
  * Author: teknolai
  * Author URI: https://silverfin.com
- * Has Settings: false
+ * Has Settings: true
  */
 
 if (!defined('PHPWG_ROOT_PATH')) die('Hacking attempt!');
@@ -31,11 +31,20 @@ define('MLL_DEV_ALLOWED_EMAILS', []);
 // UA fingerprint verification (Passless-style binding).
 // When true, the magic link is bound to the browser that requested it:
 // clicking the link from a different browser/device is rejected.
-// Set to false if your users commonly check email on a different device
+// Turn it off if your users commonly check email on a different device
 // than the one they use to browse the gallery.
+//
+// This is configurable by the gallery admin under
+// Administration → Plugins → Magic Link Login, stored in Piwigo's config
+// as `mll_verify_ua`. A constant defined in local/config/config.inc.php
+// still wins (it is defined before this runs), for file-based config.
 // ---------------------------------------------------------------------------
 if (!defined('MLL_VERIFY_UA')) {
-    define('MLL_VERIFY_UA', true);
+    global $conf;
+    define(
+        'MLL_VERIFY_UA',
+        array_key_exists('mll_verify_ua', $conf) ? (bool) $conf['mll_verify_ua'] : true
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -54,6 +63,21 @@ require_once MLL_PATH . 'include/functions.php';
 // Hook into the login page to inject the magic-link email form.
 // ---------------------------------------------------------------------------
 add_event_handler('loc_begin_identification', 'mll_inject_form');
+
+// ---------------------------------------------------------------------------
+// Add a "Magic Link Login" entry under Administration → Plugins, linking to
+// the settings page (admin.php). The id after `plugin-` is this folder's name.
+// ---------------------------------------------------------------------------
+add_event_handler('get_admin_plugin_menu_links', 'mll_admin_menu');
+
+function mll_admin_menu($menu)
+{
+    $menu[] = [
+        'NAME' => 'Magic Link Login',
+        'URL'  => get_root_url() . 'admin.php?page=plugin-MagicLinkLogin',
+    ];
+    return $menu;
+}
 
 /**
  * Injects the "Login with email" block into the identification page.

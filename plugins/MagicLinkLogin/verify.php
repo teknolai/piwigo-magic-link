@@ -38,6 +38,14 @@ if (!defined('MAGIC_LINK_TOKENS_TABLE')) {
     define('MAGIC_LINK_TOKENS_TABLE', $prefixeTable . 'magic_link_tokens');
 }
 
+// The raw token travels in this page's URL (?token=...). Send no Referer to
+// any resource or redirect target so the token can't leak via the Referer
+// header (e.g. to third-party assets or the gallery's access logs downstream).
+// Set before any output so it applies to error pages and the login redirect.
+if (!headers_sent()) {
+    header('Referrer-Policy: no-referrer');
+}
+
 // ---------------------------------------------------------------------------
 // Helper: render a simple, safe error page and stop execution.
 // BUG-17: Removed dead `global $template` — we render raw HTML here, no
