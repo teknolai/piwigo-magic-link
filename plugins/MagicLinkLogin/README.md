@@ -48,12 +48,18 @@ Deactivating leaves the token table in place; uninstalling drops it.
 
 ## Configuration
 
-Edit the constants at the top of `main.inc.php`:
+Most galleries only need the settings page: **Administration → Plugins →
+Magic Link Login**. It lets you toggle browser binding and shows email
+deliverability guidance (SPF/DKIM/DMARC) plus the current SMTP status.
 
-| Constant | Default | Purpose |
-|----------|---------|---------|
-| `MLL_DEV_ALLOWED_EMAILS` | `[]` | If non-empty, only listed emails may request links (safe testing on a live gallery). |
-| `MLL_VERIFY_UA` | `true` | Bind a link to the requesting browser. Set `false` if users open email on a different device. |
+| Setting | Where | Default | Purpose |
+|---------|-------|---------|---------|
+| Browser binding (`mll_verify_ua`) | Settings page | on | Bind a link to the requesting browser. Turn off if users open email on a different device. |
+| `MLL_DEV_ALLOWED_EMAILS` | `main.inc.php` constant | `[]` | If non-empty, only listed emails may request links (safe testing on a live gallery). |
+
+> Defining `MLL_VERIFY_UA` as a constant in `local/config/config.inc.php` still
+> works and overrides the settings-page value (the page tells you when this is
+> the case).
 
 ## Translations
 

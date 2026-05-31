@@ -39,6 +39,13 @@ class MagicLinkLogin_maintain extends PluginMaintain
                 KEY `idx_email_expires` (`email`, `expires_at`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         ");
+
+        // Seed the default settings (only if not already present, so a
+        // re-install / re-activate doesn't clobber an admin's choice).
+        global $conf;
+        if (!array_key_exists('mll_verify_ua', $conf)) {
+            conf_update_param('mll_verify_ua', true, true);
+        }
     }
 
     // -----------------------------------------------------------------------
@@ -72,5 +79,6 @@ class MagicLinkLogin_maintain extends PluginMaintain
     public function uninstall()
     {
         pwg_query("DROP TABLE IF EXISTS `{$this->table}`");
+        conf_delete_param('mll_verify_ua');
     }
 }

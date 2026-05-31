@@ -40,6 +40,8 @@ package: ## Build a clean distributable zip (runtime files only, no dev artifact
 		plugins/$(PLUGIN)/maintain.class.php \
 		plugins/$(PLUGIN)/magic_link_handler.php \
 		plugins/$(PLUGIN)/verify.php \
+		plugins/$(PLUGIN)/admin.php \
+		plugins/$(PLUGIN)/admin \
 		plugins/$(PLUGIN)/include \
 		plugins/$(PLUGIN)/template \
 		plugins/$(PLUGIN)/language \
