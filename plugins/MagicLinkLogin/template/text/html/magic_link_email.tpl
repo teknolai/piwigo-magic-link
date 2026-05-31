@@ -5,7 +5,7 @@
 
 <p>
   Click the button below to sign in to your photo gallery.
-  This link is <strong>single-use</strong> and expires in <strong>{$EXPIRES_MIN} minutes</strong>.
+  This link is <strong>single-use</strong> and expires in <strong>{$EXPIRES_MIN} minutes</strong>.{if $UA_BOUND} For your security, it only works in the same browser you used to request it.{/if}
 </p>
 
 <p style="text-align: center; margin: 1.5em 0;">

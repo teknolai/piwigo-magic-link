@@ -160,6 +160,9 @@ pwg_mail(
             'VERIFY_URL'  => $verify_url,
             'EXPIRES_MIN' => 15,
             'GALLERY_URL' => $gallery_url,
+            // Show the "same browser" note only when UA binding is actually
+            // enforced (verify.php gates enforcement on this same constant).
+            'UA_BOUND'    => (defined('MLL_VERIFY_UA') && MLL_VERIFY_UA),
         ],
     ]
 );
